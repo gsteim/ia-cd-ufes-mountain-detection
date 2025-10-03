@@ -34,7 +34,7 @@ Após o download, coloque o arquivo `.pth` no diretório raiz, onde está o arqu
 
 ## Uso
 
-Para executar o ervidor localmente:
+Para executar o servidor localmente:
 
 ```bash
 python app.py
