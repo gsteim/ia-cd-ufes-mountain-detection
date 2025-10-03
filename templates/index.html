@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trilha na Montanha</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">\
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Cor de fundo suave */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 1rem;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 1rem; /* Cantos arredondados */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            align-items: center;
+            position: relative; /* Added for absolute positioning of zoom modal */
+        }
+        canvas {
+            display: block;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem; /* Cantos arredondados */
+            background-color: #edf2f7;
+            max-width: 100%;
+            height: auto;
+        }
+        input[type="file"] {
+            display: none; /* Esconde o input de arquivo padrão */
+        }
+        .custom-file-upload {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            background-color: #4f46e5; /* Azul índigo */
+            color: white;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .custom-file-upload:hover {
+            background-color: #4338ca; /* Azul índigo mais escuro no hover */
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            background-color: #10b981; /* Verde esmeralda */
+            color: white;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #059669; /* Verde esmeralda mais escuro no hover */
+        }
+        .message-box {
+            background-color: #fff3cd; /* Amarelo claro para mensagens */
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            width: 100%;
+            text-align: center;
+            display: none; /* Escondido por padrão */
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #4f46e5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: none; /* Escondido por padrão */
+            margin-left: 0.5rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            font-size: 0.875rem;
+            resize: vertical;
+        }
+        .input-validation-message {
+            color: #dc2626; /* Red-600 */
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+        /* Ensure zoomCanvas is also round */
+        #zoomCanvas {
+            border-radius: 50%; /* Makes the canvas itself round */
+            display: block; /* Removes extra space below canvas */
+        }
+        /* Explicitly size zoomContent and remove padding/background that might make it square */
+        #zoomContent {
+            width: 100%; /* Match zoomCanvas width */
+            height: 100%; /* Match zoomCanvas height */
+            padding: 0; /* Remove any padding */
+            background-color: transparent; /* Ensure no white background shows */
+            /* Removed border: 1px solid #ccc; */ /* Removed this line */
+        }
+
+        /* Stage Modal Styles */
+        .stage-modal {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 1.5rem;
+            z-index: 60; /* Above zoom modal if both are open */
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-width: 350px; /* Limit width */
+            min-width: 250px;
+        }
+        .stage-modal-close-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #a0aec0;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+        .stage-modal-close-btn:hover {
+            color: #ef4444; /* Red-500 */
+        }
+        .stage-modal h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        .stage-modal p {
+            font-size: 1rem;
+            color: #555;
+            margin-bottom: 0.25rem;
+        }
+        .stage-modal pre {
+            background-color: #f8f8f8;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-family: 'Inter', monospace;
+            font-size: 0.875rem;
+            white-space: pre-wrap; /* Ensures long lines wrap */
+            word-break: break-all; /* Breaks words if necessary */
+            max-height: 150px; /* Limit height of JSON block */
+            overflow-y: auto; /* Enable scrolling for long JSON */
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Gerador de Trilha na Montanha</h1>
+
+        <div class="w-full flex flex-col items-center gap-4">
+            <label for="imageUpload" class="custom-file-upload">
+                Carregar Imagem da Montanha
+            </label>
+            <input type="file" id="imageUpload" accept="image/*">
+            
+            <div class="flex items-center mt-2">
+                <input type="checkbox" id="showContourCheckbox" class="form-checkbox h-5 w-5 text-indigo-600">
+                <label for="showContourCheckbox" class="ml-2 text-gray-700">Exibir Contorno do Polígono</label>
+            </div>
+
+            <div class="flex items-center mt-2">
+                <input type="checkbox" id="showCostLabelsCheckbox" class="form-checkbox h-5 w-5 text-indigo-600" checked>
+                <label for="showCostLabelsCheckbox" class="ml-2 text-gray-700">Exibir Rótulos de Custo</label>
+            </div>
+
+            <!-- CÓDIGO INSERIDO -->
+            <div class="flex items-center mt-2">
+                <input type="checkbox" id="showTrailCheckbox" class="form-checkbox h-5 w-5 text-indigo-600" checked>
+                <label for="showTrailCheckbox" class="ml-2 text-gray-700">Exibir Trilha</label>
+            </div>
+            <!-- FIM DO CÓDIGO INSERIDO -->
+
+            <div class="w-full mt-4">
+                <label for="trailDataInput" class="block text-gray-700 text-sm font-bold mb-2">
+                    Dados da Trilha (JSON):
+                </label>
+                <textarea id="trailDataInput" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"></textarea>
+                <p id="trailDataValidationMessage" class="input-validation-message"></p>
+                <button id="loadTrailDataBtn" class="mt-3 w-full">
+                    Carregar Dados da Trilha
+                </button>
+            </div>
+
+            <button id="processImageBtn" class="flex items-center justify-center mt-4">
+                Processar Imagem e Desenhar Trilha
+                <div id="loadingSpinner" class="loading-spinner"></div>
+            </button>
+        </div>
+
+        <div id="messageBox" class="message-box"></div>
+
+        <canvas id="mountainCanvas"></canvas>
+    </div>
+
+    <script>
+        // Define o objeto Module globalmente para que o OpenCV.js possa chamá-lo
+        // Este deve ser o primeiro código executado no script.js
+        var Module = {
+            onRuntimeInitialized: function() {
+                // Esta função é chamada pelo OpenCV.js quando ele está totalmente carregado e pronto
+                onOpenCvReady();
+            }
+        };
+
+        // Displays messages in the message box
+        function showMessage(msg, type = 'info') {
+            const messageBox = document.getElementById('messageBox'); // Ensure messageBox is accessible
+            messageBox.textContent = msg;
+            messageBox.style.display = 'block';
+            messageBox.className = `message-box ${type === 'error' ? 'bg-red-100 border-red-400 text-red-700' : 'bg-yellow-100 border-yellow-400 text-yellow-700'}`;
+        }
+
+        // Hides the message box
+        function hideMessage() {
+            const messageBox = document.getElementById('messageBox'); // Ensure messageBox is accessible
+            messageBox.style.display = 'none';
+        }
+
+        // Callback function for when OpenCV.js is ready
+        function onOpenCvReady() {
+            cvReady = true;
+            showMessage('OpenCV.js carregado com sucesso!', 'success');
+            console.log('OpenCV.js is ready.');
+        }
+    </script>
+    <script src="https://docs.opencv.org/4.x/opencv.js"></script>
+
+    <script>
+        // Declare all constants at the top of the script
+        const imageUpload = document.getElementById('imageUpload');
+        const processImageBtn = document.getElementById('processImageBtn');
+        const mountainCanvas = document.getElementById('mountainCanvas');
+        const ctx = mountainCanvas.getContext('2d');
+        const showContourCheckbox = document.getElementById('showContourCheckbox');
+        const showCostLabelsCheckbox = document.getElementById('showCostLabelsCheckbox');
+        const showTrailCheckbox = document.getElementById('showTrailCheckbox'); // CÓDIGO INSERIDO
+        const trailDataInput = document.getElementById('trailDataInput');
+        const loadTrailDataBtn = document.getElementById('loadTrailDataBtn');
+        const trailDataValidationMessage = document.getElementById('trailDataValidationMessage');
+        const NODE_RADIUS = 20; // Fixed NODE_RADIUS for consistent visual size
+		let nodes = new Map(); // Global map to store node data
+		let edges = []; // Global array to store edge data
+		let nodeColors = new Map(); // Global map to store node colors
+
+        let img = new Image();
+        let cvReady = false;
+        let clickableAreas = []; // Stores areas for click detection on canvas
+        let currentPolygon = null; // Stores the detected polygon from the image
+        let zoomPopupOpen = false; // Flag to track if the zoom popup is open
+        let currentHoveredCluster = null; // Stores the cluster of nodes currently hovered over
+        let zoomCloseTimeout = null; // Timeout for closing the zoom popup
+
+        let activeStagePopup = null; // Stores information about the currently open stage popup
+
+        let animationFrameId = null; // To store the requestAnimationFrame ID for cancellation
+
+        let activeCollisionFunnel = null;
+
+        // Default trail data structure
+        let trailData = {
+            "processo": "Criação de Relatório Técnico",
+            "etapas": [
+                { "id": 1, "etapa": "Coleta de dados", "dificuldade": "média", "responsavel": "eu", "custo":"1-2=1" },
+                { "id": 2, "etapa": "Redação do conteúdo", "dificuldade": "média", "responsavel": "eu", "responsavel": "eu", "custo":"2-3=2;2-4=6" },
+                { "id": 3, "etapa": "Análise estatística", "dificuldade": "alta", "responsavel": "outro", "custo":"3-4=3" },
+                { "id": 4, "etapa": "Revisão técnica", "dificuldade": "alta", "responsavel": "outro", "custo":"4-5=1" },
+                { "id": 5, "etapa": "Formatação e diagramação", "dificuldade": "baixa", "responsavel": "eu", "custo":"5-6=10" },
+                { "id": 6, "etapa": "Entrega final", "dificuldade": "baixa", "responsavel": "outro", "custo":"" }
+            ]
+        };
+
+        // Predefined colors for nodes
+        const NODE_COLORS = [
+            '#FFD700', // Gold
+            '#4CAF50', // Green
+            '#2196F3', // Blue
+            '#FF5722', // Deep Orange
+            '#9C27B0', // Purple
+            '#FFEB3B', // Yellow
+            '#795548', // Brown
+            '#E91E63', // Pink
+            '#00BCD4', // Cyan
+            '#607D8B', // Blue Grey
+            '#8BC34A', // Light Green
+            '#FFC107'  // Amber
+        ];
+
+        // Function to close the zoom popup (no animation)
+        function closeZoomPopup() {
+            const zoomModalElement = document.getElementById('zoomModal');
+            if (zoomModalElement) {
+                zoomModalElement.remove();
+                zoomPopupOpen = false;
+                currentHoveredCluster = null;
+                // Redraw main canvas to clear funnel lines
+                if (currentPolygon) {
+                    desenharPoligonoETrilha(currentPolygon, showContourCheckbox.checked, showCostLabelsCheckbox.checked);
+                } else {
+                    ctx.clearRect(0, 0, mountainCanvas.width, mountainCanvas.height);
+                    ctx.drawImage(img, 0, 0, mountainCanvas.width, mountainCanvas.height);
+                }
+            }
+        }
+
+
+function drawFunnelBetweenCircles(ctx, c1x, c1y, r1, c2x, c2y, r2) {
+    console.log("Desenhando funil...");
+    const d = Math.sqrt((c2x - c1x) ** 2 + (c2y - c1y) ** 2);
+    if (d <= Math.abs(r1 - r2)) return; // círculos sobrepostos
+
+    const theta = Math.atan2(c2y - c1y, c2x - c1x);
+    const gamma = Math.acos((r1 - r2) / d);
+
+    const start1X = c1x + r1 * Math.cos(theta + gamma);
+    const start1Y = c1y + r1 * Math.sin(theta + gamma);
+    const start2X = c1x + r1 * Math.cos(theta - gamma);
+    const start2Y = c1y + r1 * Math.sin(theta - gamma);
+
+    const end1X = c2x + r2 * Math.cos(theta + gamma);
+    const end1Y = c2y + r2 * Math.sin(theta + gamma);
+    const end2X = c2x + r2 * Math.cos(theta - gamma);
+    const end2Y = c2y + r2 * Math.sin(theta - gamma);
+
+    ctx.save();
+    ctx.strokeStyle = 'lime'; // cor visível
+    ctx.lineWidth = 3;
+
+    // círculo do cluster/sub-cluster
+    ctx.beginPath();
+    ctx.arc(c1x, c1y, r1, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // tangente 1
+    ctx.beginPath();
+    ctx.moveTo(start1X, start1Y);
+    ctx.lineTo(end1X, end1Y);
+    ctx.stroke();
+
+    // tangente 2
+    ctx.beginPath();
+    ctx.moveTo(start2X, start2Y);
+    ctx.lineTo(end2X, end2Y);
+    ctx.stroke();
+
+    ctx.restore();
+}
+
+		
+		// Opens a zoomed-in popup for a cluster of colliding nodes
+		function openZoomPopup(cluster, mouseX, mouseY) {
+            // 1. Clear any existing zoom modal and active stage popup
+            closeZoomPopup();
+            closeStagePopup();
+
+            // 2. Redraw the main canvas to clear any previous funnel lines or popups
+            if (currentPolygon) {
+                desenharPoligonoETrilha(currentPolygon, showContourCheckbox.checked, showCostLabelsCheckbox.checked);
+            } else {
+                ctx.clearRect(0, 0, mountainCanvas.width, mountainCanvas.height);
+                ctx.drawImage(img, 0, 0, mountainCanvas.width, mountainCanvas.height);
+            }
+
+            // Determine bounding box do cluster
+            const margin = 40;
+            const minX = Math.min(...cluster.map(n => n.x)) - margin;
+            const minY = Math.min(...cluster.map(n => n.y)) - margin;
+            const maxX = Math.max(...cluster.map(n => n.x)) + margin;
+            const maxY = Math.max(...cluster.map(n => n.y)) + margin;
+
+            const width = maxX - minX;
+            const height = maxY - minY;
+
+            const zoomPopupSize = 400; // Fixed size for the zoom popup
+
+            // Calculate center of the original cluster on the main canvas
+            let clusterMinX = Infinity, clusterMaxX = -Infinity;
+            let clusterMinY = Infinity, clusterMaxY = -Infinity;
+            cluster.forEach(node => {
+                clusterMinX = Math.min(clusterMinX, node.x);
+                clusterMaxX = Math.max(clusterMaxX, node.x);
+                clusterMinY = Math.min(clusterMinY, node.y);
+                clusterMaxY = Math.max(clusterMaxY, node.y);
+            });
+            const originalClusterCenterX = (clusterMinX + clusterMaxX) / 2;
+            const originalClusterCenterY = (clusterMinY + clusterMaxY) / 2;
+            
+            // Calculate dynamic originalClusterRadius based on the spread of the cluster
+            let originalClusterRadius = 0;
+            cluster.forEach(node => {
+                const dist = Math.sqrt(Math.pow(node.x - originalClusterCenterX, 2) + Math.pow(node.y - originalClusterCenterY, 2));
+                originalClusterRadius = Math.max(originalClusterRadius, dist + NODE_RADIUS); // Add NODE_RADIUS to encompass the node circle itself
+            });
+            // Ensure a minimum radius if only one node or very close nodes
+            originalClusterRadius = Math.max(originalClusterRadius, NODE_RADIUS * 1.5);
+
+
+            let zoomPopupCanvasX = originalClusterCenterX;
+            let zoomPopupCanvasY = originalClusterCenterY;
+            const paddingBetweenClusterAndPopup = 30; // Extra space
+            // Adjusted requiredOffset to use the dynamic originalClusterRadius
+            const requiredOffset = originalClusterRadius + zoomPopupSize / 2 + paddingBetweenClusterAndPopup;
+
+            const canvasWidth = mountainCanvas.width;
+            const canvasHeight = mountainCanvas.height;
+
+            // Define potential positions (x, y are top-left of the popup)
+            // Order them by preference if needed, e.g., top-right, then top-left, etc.
+            const potentialPositions = [
+                { x: originalClusterCenterX + requiredOffset, y: originalClusterCenterY - requiredOffset - zoomPopupSize/2 }, // Top-Right
+                { x: originalClusterCenterX - requiredOffset - zoomPopupSize, y: originalClusterCenterY - requiredOffset - zoomPopupSize/2 }, // Top-Left
+                { x: originalClusterCenterX + requiredOffset, y: originalClusterCenterY + requiredOffset - zoomPopupSize/2 }, // Bottom-Right
+                { x: originalClusterCenterX - requiredOffset - zoomPopupSize, y: originalClusterCenterY + requiredOffset - zoomPopupSize/2 }  // Bottom-Left
+            ];
+
+            let foundPosition = false;
+            for (const pos of potentialPositions) {
+                // Check if the potential position is entirely within canvas bounds
+                if (pos.x >= 0 && pos.x + zoomPopupSize <= canvasWidth &&
+                    pos.y >= 0 && pos.y + zoomPopupSize <= canvasHeight) {
+
+                    // Check for overlap with the original cluster area
+                    const clusterRect = {
+                        left: originalClusterCenterX - originalClusterRadius,
+                        right: originalClusterCenterX + originalClusterRadius,
+                        top: originalClusterCenterY - originalClusterRadius,
+                        bottom: originalClusterCenterY + originalClusterRadius
+                    };
+                    const popupRect = {
+                        left: pos.x,
+                        right: pos.x + zoomPopupSize,
+                        top: pos.y,
+                        bottom: pos.y + zoomPopupSize
+                    };
+
+                    // No overlap if:
+                    // popup is to the right of cluster OR popup is to the left of cluster
+                    // AND popup is below cluster OR popup is above cluster
+                    const noOverlap = (popupRect.left >= clusterRect.right || popupRect.right <= clusterRect.left ||
+                                       popupRect.top >= clusterRect.bottom || popupRect.bottom <= clusterRect.top);
+
+                    if (noOverlap) {
+                        zoomPopupCanvasX = pos.x;
+                        zoomPopupCanvasY = pos.y;
+                        foundPosition = true;
+                        break;
+                    }
+                }
+            }
+
+            // Fallback: if no ideal position found, center it (might overlap, but at least it's visible)
+            if (!foundPosition) {
+                zoomPopupCanvasX = (canvasWidth - zoomPopupSize) / 2;
+                zoomPopupCanvasY = (canvasHeight - zoomPopupSize) / 2;
+            }
+
+
+			// Criar modal
+			const zoomModal = document.createElement('div');
+			zoomModal.id = 'zoomModal'; // Add ID for easy removal
+			zoomModal.className = "absolute z-50"; // Changed to absolute, removed bg-black etc.
+            
+            // Position the modal using calculated canvas coordinates, relative to the canvas parent
+            const containerRect = mountainCanvas.parentElement.getBoundingClientRect();
+            const canvasRect = mountainCanvas.getBoundingClientRect();
+
+            // Calculate the position of the zoom popup relative to the container
+            // zoomPopupCanvasX and zoomPopupCanvasY are in the internal canvas coordinates.
+            // We need to scale them to the rendered CSS size of the canvas,
+            // and then offset them by the canvas's position relative to its parent (the container).
+            
+            // Position of the canvas top-left relative to the container top-left
+            const canvasOffsetLeft = canvasRect.left - containerRect.left;
+            const canvasOffsetTop = canvasRect.top - containerRect.top;
+
+            // Scale factor from internal canvas resolution to displayed CSS pixels
+            const scaleX_display = canvasRect.width / mountainCanvas.width;
+            const scaleY_display = canvasRect.height / mountainCanvas.height;
+
+            // Calculate the final CSS position for the zoom modal
+            zoomModal.style.left = `${canvasOffsetLeft + (zoomPopupCanvasX * scaleX_display)}px`;
+            zoomModal.style.top = `${canvasOffsetTop + (zoomPopupCanvasY * scaleY_display)}px`;
+            zoomModal.style.width = `${zoomPopupSize * scaleX_display}px`;
+            zoomModal.style.height = `${zoomPopupSize * scaleY_display}px`;
+            
+            // Append to the container instead of body
+            mountainCanvas.parentElement.appendChild(zoomModal);
+
+			zoomModal.innerHTML = `
+    <div id="zoomContent" class="rounded-full shadow-lg relative" style="width: 100%; height: 100%;">
+        <button id="closeZoom" class="absolute text-gray-400 hover:text-gray-600 font-bold" style="top: -25px; right: -25px;background-color: white;">X</button>
+        <canvas id="zoomCanvas" width="400" height="400"></canvas>
+    </div>
+`;
+
+const zoomCanvas = document.getElementById('zoomCanvas');
+const zctx = zoomCanvas.getContext('2d');
+
+// Definindo o raio com borda já incluída
+const radius = zoomPopupSize / 2;
+const borderWidth = 4; // espessura da borda branca
+
+// Desenho único: imagem recortada e borda juntos
+zctx.save();
+zctx.beginPath();
+zctx.arc(radius, radius, radius - borderWidth / 2, 0, Math.PI * 2, true);
+zctx.closePath();
+zctx.clip();
+
+// Desenha imagem dentro do círculo
+zctx.drawImage(
+    img,  
+    minX, minY,  
+    width, height,  
+    0, 0,  
+    zoomPopupSize, zoomPopupSize  
+);
+zctx.restore();
+
+// Desenha borda branca única no mesmo círculo
+zctx.beginPath();
+zctx.arc(radius, radius, radius - borderWidth / 2, 0, Math.PI * 2);
+zctx.strokeStyle = 'white';
+zctx.lineWidth = borderWidth;
+zctx.stroke();
+
+
+			// Escala para ajustar coordenadas dos elementos
+			const scaleX = zoomPopupSize / width;
+			const scaleY = zoomPopupSize / height;
+
+            let zoomCurveDirectionToggle = 1; // Local toggle for zoom curves
+
+			// Desenhar arestas no zoom (incluindo conexões externas)
+            edges.forEach(edge => {
+                const startNode = nodes.get(edge.sourceId);
+                const endNode = nodes.get(edge.destId);
+
+                const isStartNodeInCluster = cluster.some(n => n.id === startNode.id);
+                const isEndNodeInCluster = cluster.some(n => n.id === endNode.id);
+
+                if (startNode && endNode && (isStartNodeInCluster || isEndNodeInCluster)) {
+                    zctx.beginPath();
+                    zctx.strokeStyle = nodeColors.get(startNode.stageData.id);
+                    zctx.lineWidth = 2;
+
+                    // Case 1: Both nodes are in the cluster - apply quadratic curve
+                    if (isStartNodeInCluster && isEndNodeInCluster) {
+                        const startZoomX = (startNode.x - minX) * scaleX;
+                        const startZoomY = (startNode.y - minY) * scaleY;
+                        const endZoomX = (endNode.x - minX) * scaleX;
+                        const endZoomY = (endNode.y - minY) * scaleY;
+
+                        const midX_zoom = (startZoomX + endZoomX) / 2;
+                        const midY_zoom = (startZoomY + endZoomY) / 2;
+
+                        const dx_line_zoom = endZoomX - startZoomX;
+                        const dy_line_zoom = endZoomY - startZoomY;
+                        const lineLength_zoom = Math.sqrt(dx_line_zoom * dx_line_zoom + dy_line_zoom * dy_line_zoom);
+
+                        let offsetX_zoom = 0;
+                        let offsetY_zoom = 0;
+                        // Adjusted curveOffsetMagnitude_zoom to be dynamic
+                        const curveOffsetMagnitude_zoom = Math.max(NODE_RADIUS, lineLength_zoom * 0.2); 
+
+                        if (lineLength_zoom > 0) {
+                            offsetX_zoom = -dy_line_zoom / lineLength_zoom * curveOffsetMagnitude_zoom * zoomCurveDirectionToggle;
+                            offsetY_zoom = dx_line_zoom / lineLength_zoom * curveOffsetMagnitude_zoom * zoomCurveDirectionToggle;
+                        }
+
+                        const controlPointX_zoom = midX_zoom + offsetX_zoom;
+                        const controlPointY_zoom = midY_zoom + offsetY_zoom;
+
+                        zctx.moveTo(startZoomX, startZoomY);
+                        zctx.quadraticCurveTo(controlPointX_zoom, controlPointY_zoom, endZoomX, endZoomY);
+                        
+                        zoomCurveDirectionToggle *= -1; // Toggle curve direction for next edge
+                    } 
+                    // Case 2: Start node in cluster, End node outside (draw 'funnel' as straight line)
+                    else if (isStartNodeInCluster && !isEndNodeInCluster) {
+                        const startZoomX = (startNode.x - minX) * scaleX;
+                        const startZoomY = (startNode.y - minY) * scaleY;
+                        
+                        // Calcula o ponto alvo na borda do círculo de zoom
+                        const angleToEdge = Math.atan2(
+                            (endNode.y - minY) * scaleY - startZoomY, 
+                            (endNode.x - minX) * scaleX - startZoomX
+                        );
+
+                        const funnelTargetX = radius + (radius - borderWidth / 2) * Math.cos(angleToEdge);
+                        const funnelTargetY = radius + (radius - borderWidth / 2) * Math.sin(angleToEdge);
+
+                        zctx.moveTo(startZoomX, startZoomY);
+                        zctx.lineTo(funnelTargetX, funnelTargetY); // Changed to lineTo for straight lines
+                    }
+                    // Case 3: End node in cluster, Start node outside (draw 'funnel' as straight line)
+                    else if (!isStartNodeInCluster && isEndNodeInCluster) {
+                        const endZoomX = (endNode.x - minX) * scaleX;
+                        const endZoomY = (endNode.y - minY) * scaleY;
+
+                        // Calcula o ponto alvo na borda do círculo de zoom
+                        const angleToEdge = Math.atan2(
+                            (startNode.y - minY) * scaleY - endZoomY, 
+                            (startNode.x - minX) * scaleX - endZoomX
+                        );
+
+                        const funnelTargetX = radius + (radius - borderWidth / 2) * Math.cos(angleToEdge);
+                        const funnelTargetY = radius + (radius - borderWidth / 2) * Math.sin(angleToEdge);
+
+                        zctx.moveTo(funnelTargetX, funnelTargetY);
+                        zctx.lineTo(endZoomX, endZoomY); // Changed to lineTo for straight lines
+                    }
+                    zctx.stroke();
+                }
+            });
+
+
+			// Desenhar vértices no zoom
+			cluster.forEach(node => {
+				const zoomX = (node.x - minX) * scaleX;
+				const zoomY = (node.y - minY) * scaleY;
+				draw3DSphereNode(zctx, zoomX, zoomY, NODE_RADIUS * 1.5, nodeColors.get(node.stageData.id));
+				zctx.fillStyle = '#333';
+				zctx.font = '12px Inter';
+				zctx.textAlign = 'center';
+				zctx.fillText(node.stageData.etapa, zoomX, zoomY - NODE_RADIUS * 2);
+			});
+
+            // Close zoom popup button
+			document.getElementById('closeZoom').onclick = closeZoomPopup;
+
+			// Add click listener for nodes inside the zoom canvas
+            zoomCanvas.addEventListener('click', (ze) => {
+    const zoomRect = zoomCanvas.getBoundingClientRect();
+    const internalScaleX = zoomCanvas.width / zoomRect.width;
+    const internalScaleY = zoomCanvas.height / zoomRect.height;
+
+    const zoomClickX = (ze.clientX - zoomRect.left) * internalScaleX;
+    const zoomClickY = (ze.clientY - zoomRect.top) * internalScaleY;
+
+    let clickedNodeInZoom = null;
+    for (const node of cluster) {
+        const zoomNodeX = (node.x - minX) * scaleX;
+        const zoomNodeY = (node.y - minY) * scaleY;
+        const distance = Math.sqrt((zoomClickX - zoomNodeX) ** 2 + (zoomClickY - zoomNodeY) ** 2);
+
+        if (distance <= NODE_RADIUS * 1.5) {
+            clickedNodeInZoom = node;
+            break;
+        }
+    }
+
+    if (clickedNodeInZoom) {
+        const collidingSubCluster = [clickedNodeInZoom];
+
+        for (const otherNode of cluster) {
+            if (otherNode === clickedNodeInZoom) continue;
+
+            const clickedNodeZoomX = (clickedNodeInZoom.x - minX) * scaleX;
+            const clickedNodeZoomY = (clickedNodeInZoom.y - minY) * scaleY;
+            const otherNodeZoomX = (otherNode.x - minX) * scaleX;
+            const otherNodeZoomY = (otherNode.y - minY) * scaleY;
+
+            const dist = Math.sqrt(
+                (otherNodeZoomX - clickedNodeZoomX) ** 2 +
+                (otherNodeZoomY - clickedNodeZoomY) ** 2
+            );
+
+            if (dist < NODE_RADIUS * 3) {
+                collidingSubCluster.push(otherNode);
+            }
+        }
+
+        if (collidingSubCluster.length > 1) {
+            console.log('Sub-cluster em colisão detectado.');
+
+            // círculo que envolve sub-cluster
+            let cx = 0, cy = 0;
+            collidingSubCluster.forEach(n => { cx += n.x; cy += n.y; });
+            cx /= collidingSubCluster.length;
+            cy /= collidingSubCluster.length;
+
+            let r = 0;
+            collidingSubCluster.forEach(n => {
+                const d = Math.sqrt((n.x - cx) ** 2 + (n.y - cy) ** 2);
+                r = Math.max(r, d + NODE_RADIUS);
+            });
+
+            // centro do popup em coords do canvas principal
+            const zoomModalRect = document.getElementById('zoomModal').getBoundingClientRect();
+            const canvasRect = mountainCanvas.getBoundingClientRect();
+            const scaleX_display = mountainCanvas.width / canvasRect.width;
+            const scaleY_display = mountainCanvas.height / canvasRect.height;
+
+            const popupCenterX = (zoomModalRect.left - canvasRect.left + zoomModalRect.width / 2) * scaleX_display;
+            const popupCenterY = (zoomModalRect.top - canvasRect.top + zoomModalRect.height / 2) * scaleY_display;
+            const popupRadius = (zoomModalRect.width / 2) * scaleX_display;
+
+            // desenha funil
+            drawFunnelBetweenCircles(ctx, cx, cy, r, popupCenterX, popupCenterY, popupRadius);
+
+        } else {
+            console.log('Nó único selecionado → abrindo modal da etapa.');
+            openModalForStage(clickedNodeInZoom.stageData, clickedNodeInZoom.x, clickedNodeInZoom.y);
+        }
+    } else {
+        console.log('Nenhum nó clicado na área de zoom.');
+    }
+});
+
+
+            // Add mousemove event listener to the zoom canvas for cursor change
+            zoomCanvas.addEventListener('mousemove', (ze) => {
+                const zoomRect = zoomCanvas.getBoundingClientRect();
+                // Get the actual rendered width/height of the zoom canvas
+                const renderedZoomCanvasWidth = zoomRect.width;
+                const renderedZoomCanvasHeight = zoomRect.height;
+
+                // Calculate the scaling factor from rendered pixels to internal canvas pixels (400x400)
+                const internalScaleX = zoomCanvas.width / renderedZoomCanvasWidth; // 400 / renderedWidth
+                const internalScaleY = zoomCanvas.height / renderedZoomCanvasHeight; // 400 / renderedHeight
+
+                // Get mouse coordinates relative to the rendered zoom canvas, then scale to internal resolution
+                const zoomMouseX = (ze.clientX - zoomRect.left) * internalScaleX;
+                const zoomMouseY = (ze.clientY - zoomRect.top) * internalScaleY;
+
+                let hoveredNodeInZoom = false;
+                for (const node of cluster) {
+                    const zoomNodeX = (node.x - minX) * scaleX;
+                    const zoomNodeY = (node.y - minY) * scaleY;
+                    const distance = Math.sqrt(Math.pow(zoomMouseX - zoomNodeX, 2) + Math.pow(zoomMouseY - zoomNodeY, 2));
+                    if (distance <= NODE_RADIUS * 1.5) { // Check against magnified radius
+                        hoveredNodeInZoom = true;
+                        break;
+                    }
+                }
+
+                if (hoveredNodeInZoom) {
+                    zoomCanvas.style.cursor = 'pointer'; // Cursor for individual nodes in zoom
+                } else {
+                    zoomCanvas.style.cursor = 'default';
+                }
+            });
+
+            // --- Funnel Effect Drawing on Main Canvas ---
+            // Recalculate center of the original cluster on the main canvas
+            // (Already done above, but for clarity in this section)
+            // originalClusterCenterX, originalClusterCenterY, originalClusterRadius
+
+            // Get the zoom modal's actual screen position after it's added to the DOM
+            // Need to wait for the modal to be rendered for accurate rect
+// --- Funil entre cluster principal e popup ---
+setTimeout(() => {
+    const zoomModalElement = document.getElementById('zoomModal');
+    if (!zoomModalElement) return;
+
+    const zoomModalRect = zoomModalElement.getBoundingClientRect();
+    const canvasRect = mountainCanvas.getBoundingClientRect();
+
+    const zoomPopupCanvasCenterX = (zoomModalRect.left - canvasRect.left + zoomModalRect.width / 2) / scaleX_display;
+    const zoomPopupCanvasCenterY = (zoomModalRect.top - canvasRect.top + zoomModalRect.height / 2) / scaleY_display;
+
+    drawFunnelBetweenCircles(
+        ctx,
+        originalClusterCenterX, originalClusterCenterY, originalClusterRadius,
+        zoomPopupCanvasCenterX, zoomPopupCanvasCenterY, zoomPopupSize / 2
+    );
+}, 50);
+
+
+            // --- End Funnel Effect Drawing ---
+		}
+
+        // Function to draw an arrow from a node to the popup
+function drawArrowFromNodeToPopup(nodeCanvasX, nodeCanvasY, popupElement) {
+    ctx.save();
+
+    const canvasRect = mountainCanvas.getBoundingClientRect();
+    const popupRect = popupElement.getBoundingClientRect();
+
+    const scaleX_display = mountainCanvas.width / canvasRect.width;
+    const scaleY_display = mountainCanvas.height / canvasRect.height;
+
+    const popupCanvasX = (popupRect.left - canvasRect.left) * scaleX_display;
+    const popupCanvasY = (popupRect.top - canvasRect.top) * scaleY_display;
+    const popupCanvasWidth = popupRect.width * scaleX_display;
+    const popupCanvasHeight = popupRect.height * scaleY_display;
+
+    // --- Lados do popup ---
+    const sides = [
+        { x: popupCanvasX, y: popupCanvasY + popupCanvasHeight / 2, normal: Math.PI },
+        { x: popupCanvasX + popupCanvasWidth, y: popupCanvasY + popupCanvasHeight / 2, normal: 0 },
+        { x: popupCanvasX + popupCanvasWidth / 2, y: popupCanvasY, normal: -Math.PI / 2 },
+        { x: popupCanvasX + popupCanvasWidth / 2, y: popupCanvasY + popupCanvasHeight, normal: Math.PI / 2 }
+    ];
+
+    // --- Escolhe lado mais próximo ---
+    let minDist = Infinity;
+    let closestSide = null;
+    for (const side of sides) {
+        const dx = side.x - nodeCanvasX;
+        const dy = side.y - nodeCanvasY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < minDist) {
+            minDist = dist;
+            closestSide = side;
+        }
+    }
+
+    const arrowLength = 40;
+    const arrowWidth = 80;
+
+    // --- Ponta encostando no popup ---
+    const tipX = closestSide.x;
+    const tipY = closestSide.y;
+
+    // Base da ponta deslocada para dentro
+    const arrowBaseOffset = 10; // valor ajustável
+    const baseX = tipX + (arrowLength - arrowBaseOffset) * Math.cos(closestSide.normal);
+    const baseY = tipY + (arrowLength - arrowBaseOffset) * Math.sin(closestSide.normal);
+
+    // --- Ponta nova ---
+    drawSmoothArrowhead(tipX, tipY, baseX, baseY, arrowWidth);
+
+    // --- Curva Bezier do vértice até a base da ponta ---
+    const angleFromNode = Math.atan2(baseY - nodeCanvasY, baseX - nodeCanvasX);
+    const startX = nodeCanvasX + NODE_RADIUS * Math.cos(angleFromNode);
+    const startY = nodeCanvasY + NODE_RADIUS * Math.sin(angleFromNode);
+
+    const dx = baseX - startX;
+    const dy = baseY - startY;
+    
+    const lineAngle = Math.atan2(dy, dx);
+    let perpAngle = lineAngle + Math.PI / 2;
+    
+    const curveHeight = 150;
+
+    const relativePosition = (baseX - tipX) * (startY - tipY) - (baseY - tipY) * (startX - tipX);
+    if (relativePosition < 0) {
+        perpAngle = lineAngle - Math.PI / 2;
+    }
+
+    const control1X = startX + dx * 0.25 + curveHeight * Math.cos(perpAngle);
+    const control1Y = startY + dy * 0.25 + curveHeight * Math.sin(perpAngle);
+    
+    const control2X = startX + dx * 0.75 + curveHeight * Math.cos(perpAngle);
+    const control2Y = startY + dy * 0.75 + curveHeight * Math.sin(perpAngle);
+
+    const steps = 40;
+    for (let i = 0; i < steps; i++) {
+        const t1 = i / steps;
+        const t2 = (i + 1) / steps;
+
+        const x1 = cubicBezier(t1, startX, control1X, control2X, baseX);
+        const y1 = cubicBezier(t1, startY, control1Y, control2Y, baseY);
+        const x2 = cubicBezier(t2, startX, control1X, control2X, baseX);
+        const y2 = cubicBezier(t2, startY, control1Y, control2Y, baseY);
+
+        const width = lerp(2, 8, t1);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = width;
+        ctx.lineCap = "round";
+        ctx.stroke();
+    }
+
+    ctx.restore();
+
+    // --- Nova ponta com uma curva + uma reta, afinando ---
+    function drawSmoothArrowhead(tipX, tipY, baseX, baseY, width) {
+        const angle = Math.atan2(tipY - baseY, tipX - baseX);
+        const headWidth = width * 0.30;    
+
+        const p1x = baseX + headWidth * Math.cos(angle + Math.PI / 2);
+        const p1y = baseY + headWidth * Math.sin(angle + Math.PI / 2);
+        const p2x = baseX + headWidth * Math.cos(angle - Math.PI / 2);
+        const p2y = baseY + headWidth * Math.sin(angle - Math.PI / 2);
+
+        ctx.strokeStyle = "white";
+        ctx.lineCap = "round";
+
+        // Linha curva (superior)
+        ctx.beginPath();
+        ctx.moveTo(p1x, p1y);
+        ctx.quadraticCurveTo((p1x + tipX) / 2, (p1y + tipY) / 2, tipX, tipY);
+        ctx.lineWidth = 5; 
+        ctx.stroke();
+
+        // Linha reta (inferior) mais fina
+        ctx.beginPath();
+        ctx.moveTo(p2x, p2y);
+        ctx.lineTo(tipX, tipY);
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    }
+
+    function cubicBezier(t, p0, p1, p2, p3) {
+        return (
+            Math.pow(1 - t, 3) * p0 +
+            3 * Math.pow(1 - t, 2) * t * p1 +
+            3 * (1 - t) * Math.pow(t, 2) * p2 +
+            Math.pow(t, 3) * p3
+        );
+    }
+
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
+}
+
+        
+        // Function to open the stage modal (now an HTML element)
+        function openModalForStage(stage, nodeCanvasX, nodeCanvasY) {
+            closeZoomPopup(); // Close zoom popup if open
+            closeStagePopup(); // Close any existing stage popup
+
+            const container = mountainCanvas.parentElement;
+            const canvasRect = mountainCanvas.getBoundingClientRect();
+
+            const modal = document.createElement('div');
+            modal.id = 'stageModal';
+            modal.className = 'stage-modal';
+
+            // Populate modal content
+            modal.innerHTML = `
+                <button class="stage-modal-close-btn">&times;</button>
+                <h2>Etapa: ${stage.etapa}</h2>
+                <p><strong>Dificuldade:</strong> ${stage.dificuldade}</p>
+                <p><strong>Responsável:</strong> ${stage.responsavel}</p>
+                <p><strong>Dados Brutos:</strong></p>
+                <pre><code>${JSON.stringify(stage, null, 2)}</code></pre>
+            `;
+
+            container.appendChild(modal);
+
+            // Position the modal
+            // Need to get offsetWidth/Height AFTER appending to DOM for correct values
+            const modalWidth = modal.offsetWidth;
+            const modalHeight = modal.offsetHeight;
+
+            const padding = 20; // Padding from canvas edge to ensure it doesn't touch the very edge
+            const canvasWidth = mountainCanvas.width;
+            const canvasHeight = mountainCanvas.height;
+            const nodeRadius = NODE_RADIUS; // Radius of the clicked node
+
+            // Helper function to check for rectangle-circle overlap
+            function checkRectCircleOverlap(rectX, rectY, rectWidth, rectHeight, circleX, circleY, circleRadius) {
+                const closestX = Math.max(rectX, Math.min(circleX, rectX + rectWidth));
+                const closestY = Math.max(rectY, Math.min(circleY, rectY + rectHeight));
+                const distX = circleX - closestX;
+                const distY = circleY - closestY;
+                const distanceSquared = (distX * distX) + (distY * distY);
+                return distanceSquared < (circleRadius * circleRadius);
+            }
+
+            // Define the four corner positions in canvas coordinates
+            const candidatePositions = [
+                { name: 'topRight', x: canvasWidth - modalWidth - padding, y: padding },
+                { name: 'topLeft', x: padding, y: padding },
+                { name: 'bottomRight', x: canvasWidth - modalWidth - padding, y: canvasHeight - modalHeight - padding },
+                { name: 'bottomLeft', x: padding, y: canvasHeight - modalHeight - padding }
+            ];
+
+            let bestPosition = null;
+            let minOverallOverlap = Infinity; // For the fallback scenario
+
+            // Phase 1: Find a position that is fully within bounds and does NOT overlap the *selected* node.
+            for (const candidate of candidatePositions) {
+                const popupRect = { x: candidate.x, y: candidate.y, width: modalWidth, height: modalHeight };
+                
+                const isWithinBounds = (candidate.x >= padding && candidate.x + modalWidth <= canvasWidth - padding &&
+                                        candidate.y >= padding && candidate.y + modalHeight <= canvasHeight - padding);
+
+                const overlapsSelectedNode = checkRectCircleOverlap(
+                    popupRect.x, popupRect.y, popupRect.width, popupRect.height,
+                    nodeCanvasX, nodeCanvasY, nodeRadius
+                );
+
+                if (isWithinBounds && !overlapsSelectedNode) {
+                    bestPosition = candidate;
+                    break; // Found a perfect spot, no need to check further
+                }
+            }
+
+            // Phase 2: If no perfect position, find the one with the *least overall overlap* with *any* node.
+            if (!bestPosition) {
+                for (const candidate of candidatePositions) {
+                    const popupRect = { x: candidate.x, y: candidate.y, width: modalWidth, height: modalHeight };
+                    
+                    const isWithinBounds = (candidate.x >= padding && candidate.x + modalWidth <= canvasWidth - padding &&
+                                            candidate.y >= padding && candidate.y + modalHeight <= canvasHeight - padding);
+
+                    if (isWithinBounds) {
+                        let currentOverlapCount = 0;
+                        nodes.forEach(otherNode => { // Iterate through all nodes
+                            if (checkRectCircleOverlap(
+                                popupRect.x, popupRect.y, popupRect.width, popupRect.height,
+                                otherNode.x, otherNode.y, nodeRadius // Use nodeRadius for other nodes too
+                            )) {
+                                currentOverlapCount++;
+                            }
+                        });
+
+                        if (currentOverlapCount < minOverallOverlap) {
+                            minOverallOverlap = currentOverlapCount;
+                            bestPosition = candidate;
+                        }
+                    }
+                }
+            }
+
+            // Final Fallback: If still no best position (e.g., modal is larger than canvas even with padding),
+            // just use the first candidate and clamp it to ensure it's at least partially on screen.
+            if (!bestPosition) {
+                bestPosition = candidatePositions[0]; // Default to top-right
+            }
+
+            // Apply the chosen position, ensuring it's clamped within canvas boundaries
+            let finalPopupX_canvas = Math.max(padding, Math.min(canvasWidth - modalWidth - padding, bestPosition.x));
+            let finalPopupY_canvas = Math.max(padding, Math.min(canvasHeight - modalHeight - padding, bestPosition.y));
+
+            // Convert canvas coordinates (finalPopupX_canvas, finalPopupY_canvas) to CSS pixels relative to container
+            const scaleX_display = canvasRect.width / mountainCanvas.width;
+            const scaleY_display = canvasRect.height / mountainCanvas.height;
+
+const paddingCanvas = 20; // margem mínima em pixels dentro do canvas
+
+const maxLeft = canvasRect.width - modalWidth - paddingCanvas;
+const maxTop = canvasRect.height - modalHeight - paddingCanvas;
+
+const desiredLeft = finalPopupX_canvas * scaleX_display;
+const desiredTop = finalPopupY_canvas * scaleY_display;
+
+const clampedLeft = Math.max(paddingCanvas, Math.min(desiredLeft, maxLeft));
+const clampedTop = Math.max(paddingCanvas, Math.min(desiredTop, maxTop));
+
+const canvasOffsetX = canvasRect.left - container.getBoundingClientRect().left;
+const canvasOffsetY = canvasRect.top - container.getBoundingClientRect().top;
+
+modal.style.left = `${canvasOffsetX + clampedLeft}px`;
+modal.style.top = `${canvasOffsetY + clampedTop}px`;
+
+
+
+            // Store active popup info for redrawing the arrow
+            activeStagePopup = { stage, nodeCanvasX, nodeCanvasY, element: modal };
+
+            // Add event listener to the close button
+            modal.querySelector('.stage-modal-close-btn').addEventListener('click', closeStagePopup);
+
+            // Redraw canvas to draw the arrow to the new HTML modal
+            desenharPoligonoETrilha(currentPolygon, showContourCheckbox.checked, showCostLabelsCheckbox.checked);
+        }
+
+        // Function to close the stage modal (now an HTML element)
+        function closeStagePopup() {
+            const stageModalElement = document.getElementById('stageModal');
+            if (stageModalElement) {
+                stageModalElement.remove();
+                activeStagePopup = null;
+                // Redraw the entire canvas to clear the arrow
+                if (currentPolygon) {
+                    desenharPoligonoETrilha(currentPolygon, showContourCheckbox.checked, showCostLabelsCheckbox.checked);
+                } else {
+                    ctx.clearRect(0, 0, mountainCanvas.width, mountainCanvas.height);
+                    ctx.drawImage(img, 0, 0, mountainCanvas.width, mountainCanvas.height);
+                }
+            }
+        }
+
+
+        // Shows the loading spinner and disables buttons
+        function showLoading() {
+            const loadingSpinner = document.getElementById('loadingSpinner'); // Ensure loadingSpinner is accessible
+            loadingSpinner.style.display = 'block';
+            processImageBtn.disabled = true;
+            imageUpload.disabled = true;
+            loadTrailDataBtn.disabled = true;
+        }
+
+        // Hides the loading spinner and enables buttons
+        function hideLoading() {
+            const loadingSpinner = document.getElementById('loadingSpinner'); // Ensure loadingSpinner is accessible
+            loadingSpinner.style.display = 'none';
+            processImageBtn.disabled = false;
+            imageUpload.disabled = false;
+            loadTrailDataBtn.disabled = false;
+        }
+
+        // Loads trail data from the textarea input
+        function loadTrailDataFromInput() {
+            const inputString = trailDataInput.value;
+            try {
+                const parsedData = JSON.parse(inputString);
+
+                // Basic validation for the JSON structure
+                if (!parsedData || typeof parsedData !== 'object' || !parsedData.processo || !Array.isArray(parsedData.etapas)) {
+                    showValidationMessage('Erro de validação: A estrutura JSON esperada não foi encontrada (ex: "processo", "etapas").');
+                    return;
+                }
+
+                // Detailed validation for each stage
+                for (const stage of parsedData.etapas) {
+                    if (typeof stage.id !== 'number' || typeof stage.etapa !== 'string' || typeof stage.dificuldade !== 'string' || typeof stage.responsavel !== 'string') {
+                        showValidationMessage(`Erro de validação: Etapa com ID ${stage.id} tem propriedades ausentes ou com tipo incorreto.`);
+                        return;
+                    }
+                    if (stage.custo && typeof stage.custo !== 'string') {
+                        showValidationMessage(`Erro de validação: Custo da etapa com ID ${stage.id} deve ser uma string.`);
+                        return;
+                    }
+                    if (stage.custo) {
+                        const edgeStrings = stage.custo.split(';');
+                        for (const edgeStr of edgeStrings) {
+                            const parts = edgeStr.split('=');
+                            if (parts.length !== 2) {
+                                showValidationMessage(`Erro de validação: Formato de custo inválido "${edgeStr}" na etapa ${stage.id}. Esperado "origem-destino=custo".`);
+                                return;
+                            }
+                            const [nodePair, costValue] = parts;
+                            const nodeIds = nodePair.split('-');
+                            if (nodeIds.length !== 2 || isNaN(Number(nodeIds[0])) || isNaN(Number(nodeIds[1])) || isNaN(Number(costValue))) {
+                                showValidationMessage(`Erro de validação: Valores de custo ou IDs de nó inválidos em "${edgeStr}" na etapa ${stage.id}.`);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                trailData = parsedData;
+                hideTrailDataValidationMessage(); // Corrected function call
+                showMessage('Dados da trilha carregados com sucesso! Clique em "Processar Imagem" para redesenhar.', 'success');
+                // Redraw if a polygon is already loaded
+                if (currentPolygon) {
+                    desenharPoligonoETrilha(currentPolygon, showContourCheckbox.checked, showCostLabelsCheckbox.checked);
+                }
+
+            } catch (e) {
+                showValidationMessage(`Erro ao analisar JSON: ${e.message}. Por favor, verifique a sintaxe.`);
+            }
+        }
+
+        // Displays validation messages for the trail data input
+        function showValidationMessage(msg) {
+            trailDataValidationMessage.textContent = msg;
+            trailDataValidationMessage.style.display = 'block';
+        }
+
+        // Hides validation messages
+        function hideTrailDataValidationMessage() { // Renamed function
+            trailDataValidationMessage.style.display = 'none';
+        }
+
+        // Event listener for image file selection
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                hideMessage();
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    img.onload = () => {
+                        mountainCanvas.width = img.width;
+                        mountainCanvas.height = img.height;
+                        // Clear the canvas and draw the image directly here for initial display
+                        ctx.clearRect(0, 0, mountainCanvas.width, mountainCanvas.height);
+                        ctx.drawImage(img, 0, 0, mountainCanvas.width, mountainCanvas.height);
+                        showMessage('Imagem carregada. Clique em "Processar" para detetar a trilha.', 'info');
+                        // Automatically process if trail data is already loaded
+                        if (trailData) {
+                            processImageBtn.click();
+                        }
+                        // Ensure animation starts even if processImageBtn is not clicked immediately
+                        if (!animationFrameId) {
+                            animate();
+                        }
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                showMessage('Por favor, selecione uma imagem.', 'error');
+            }
+        });
+
+        // Event listener for the "Process Image" button
+        processImageBtn.addEventListener('click', async () => {
+            if (!cvReady) {
+                showMessage('OpenCV.js ainda não carregou. Por favor, aguarde.', 'error');
+                return;
+            }
+            if (!imageUpload.files || imageUpload.files.length === 0) {
+                showMessage('Por favor, carregue uma imagem primeiro.', 'error');
+                return;
+            }
+            if (!trailData || trailData.etapas.length === 0) {
+                showMessage('Por favor, carregue os dados da trilha primeiro ou use os dados padrão.', 'error');
+                return;
+            }
+
+            showLoading();
+            hideMessage();
+
+            const file = imageUpload.files[0];
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                // IMPORTANT: This application requires a Flask backend running at http://127.0.0.1:5000/
+                // If you are encountering 'NetworkError when attempting to fetch resource.', please ensure:
+                // 1. Your Flask server is running.
+                // 2. The Flask server is configured to handle CORS requests from your HTML page's origin.
+                //    (e.g., by using Flask-CORS: `from flask_cors import CORS; CORS(app)`)
+                // 3. The URL below matches the address and port of your running Flask server.
+                const response = await fetch('http://127.0.0.1:5000/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erro do servidor: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                const processedImageUrl = data.result_image;
+                const width = data.image_width;
+                const height = data.image_height;
+				console.log(data)
+                const polygons = data.polygons; // Polygons are now [{x:y:}, {x:y:}]
+                // REMOVIDO: const nodesFromBackend = data.nodes;
+                // REMOVIDO: const edgesFromBackend = data.edges;
+
+                // REMOVIDO: if (!processedImageUrl || !polygons || !width || !height || !nodesFromBackend || !edgesFromBackend) {
+                if (!processedImageUrl || !polygons || !width || !height) {
+                    showMessage('Erro: Dados incompletos recebidos da API.', 'error');
+                    return;
+                }
+
+				const imgProcessed = new Image();
+				imgProcessed.crossOrigin = "anonymous"; // Needed for images loaded from different origins
+				imgProcessed.onload = () => {
+					mountainCanvas.width = width;
+					mountainCanvas.height = height;
+					ctx.clearRect(0, 0, mountainCanvas.width, mountainCanvas.height);
+					ctx.drawImage(imgProcessed, 0, 0, img.width, img.height); // Draw the processed image
+
+                    if (polygons.length > 0) {
+                        // Pass the full data object from backend to desenharPoligonoETrilha
+                        currentPolygon = {
+                            polygons: polygons,
+                            // REMOVIDO: nodes: nodesFromBackend,
+                            // REMOVIDO: edges: edgesFromBackend
+                        };
+                        desenharPoligonoETrilha(currentPolygon, showContourCheckbox.checked, showCostLabelsCheckbox.checked); 
+                        showMessage('Trilha desenhada com sucesso!', 'success');
+                    } else {
+                        showMessage('Nenhum polígono detetado pela API.', 'error');
+                    }
+                };
+                imgProcessed.src = `http://127.0.0.1:5000/${processedImageUrl}`; // Load the processed image from Flask
+            } catch (e) {
+                console.error("Erro ao comunicar com a API Flask:", e);
+                let errorMessage = `Erro ao processar imagem: ${e.message}.`;
+                if (e instanceof TypeError && e.message === 'Failed to fetch') {
+                    errorMessage += ' Por favor, certifique-se de que o servidor Flask está a ser executado em http://127.0.0.1:5000/.';
+                }
+                showMessage(errorMessage, 'error');
+            } finally {
+                hideLoading();
+            }
+        });
+        
+        // Event listener for "Show Contour" checkbox
+        showContourCheckbox.addEventListener('change', () => {
+            if (currentPolygon) {
+                desenharPoligonoETrilha(currentPolygon, showContourCheckbox.checked, showCostLabelsCheckbox.checked);
+            }
+        });
+
+        // Event listener for "Show Cost Labels" checkbox
+        showCostLabelsCheckbox.addEventListener('change', () => {
+            if (currentPolygon) {
+                desenharPoligonoETrilha(currentPolygon, showContourCheckbox.checked, showCostLabelsCheckbox.checked);
+            }
+        });
+        
+        // CÓDIGO INSERIDO: Event listener for "Show Trail" checkbox
+        showTrailCheckbox.addEventListener('change', () => {
+            if (currentPolygon) {
+                // A simple redraw is sufficient, the render function will handle the visibility
+                desenharPoligonoETrilha(currentPolygon, showContourCheckbox.checked, showCostLabelsCheckbox.checked);
+            }
+        });
+        // FIM DO CÓDIGO INSERIDO
+
+        // Global variable to store the last known polygon data and yToXBounds for animation loop
+        let lastRenderedPolygonData = null;
+        let lastRenderedYToXBounds = null;
+
+        // Function to draw all content on the canvas
+        function renderCanvasContent(polygonData, yToXBounds, showContour, showCostLabels) {
+            ctx.clearRect(0, 0, mountainCanvas.width, mountainCanvas.height);
+            ctx.drawImage(img, 0, 0, mountainCanvas.width, mountainCanvas.height);
+
+            // Draw Cartesian grid if showContour is true
+            if (showContour) {
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)'; // Light grey for grid lines
+                ctx.lineWidth = 1;
+                ctx.font = '10px Arial';
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                const gridSize = 50; // Pixels per grid line
+
+                // Draw vertical lines and X-axis labels
+                for (let x = 0; x <= mountainCanvas.width; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, mountainCanvas.height);
+                    ctx.stroke();
+                    ctx.fillText(x, x, 10); // X-axis labels at the top
+                }
+
+                // Draw horizontal lines and Y-axis labels
+                for (let y = 0; y <= mountainCanvas.height; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(mountainCanvas.width, y);
+                    ctx.stroke();
+                    ctx.fillText(y, 15, y); // Y-axis labels on the left
+                }
+
+                // Draw the polygon contour
+                ctx.strokeStyle = 'red';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                if (polygonData.polygons && polygonData.polygons.length > 0) {
+                    polygonData.polygons[0].forEach((point, i) => {
+                        if (i === 0) ctx.moveTo(point[0], point[1]);
+                        else ctx.lineTo(point[0], point[1]);
+                    });
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+
+            // CÓDIGO MODIFICADO: Only draw the trail if the checkbox is checked
+            if (showTrailCheckbox.checked) {
+                // Call the function to draw trail nodes and edges
+                drawTrailNodesAndEdgesContent(
+                    polygonData.polygons && polygonData.polygons.length > 0 ? polygonData.polygons[0] : [],
+                    yToXBounds,
+                    showCostLabels
+                );
+
+                // Redraw active stage popup if it exists
+                if (activeStagePopup) {
+                    drawArrowFromNodeToPopup(activeStagePopup.nodeCanvasX, activeStagePopup.nodeCanvasY, activeStagePopup.element);
+                }
+            } else {
+                 // If the trail is hidden, make sure clickable areas are empty
+                 clickableAreas = [];
+            }
+
+
+            if (activeCollisionFunnel) {
+    const f = activeCollisionFunnel;
+    drawFunnelBetweenCircles(ctx, f.centerX, f.centerY, f.radius, f.popupCenterX, f.popupCenterY, f.popupRadius);
+}
+
+        }
+
+        // The main animation loop
+        function animate() {
+            if (lastRenderedPolygonData) {
+                // Update individual sphere rotation angles
+                nodes.forEach(nodeData => {
+                    if (nodeData.sphereRotationAngle !== undefined) {
+                        // Ajustado para uma rotação mais lenta (aproximadamente 15 segundos por giro)
+                        nodeData.sphereRotationAngle += (2 * Math.PI) / (15 * 60); // 2*PI radianos / (15 segundos * 60 frames/segundo)
+                    }
+                });
+
+                renderCanvasContent(lastRenderedPolygonData, lastRenderedYToXBounds, showContourCheckbox.checked, showCostLabelsCheckbox.checked);
+            } else {
+                // If no polygon data, just redraw the image
+                ctx.clearRect(0, 0, mountainCanvas.width, mountainCanvas.height);
+                ctx.drawImage(img, 0, 0, mountainCanvas.width, mountainCanvas.height);
+            }
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        // Function to draw the polygon and the trail nodes/edges
+        // This function now primarily updates the global data used by the animation loop
+        function desenharPoligonoETrilha(data, showContour = false, showCostLabels = true) {
+            lastRenderedPolygonData = data;
+            // Map Y coordinates to their min/max X bounds within the polygon
+            lastRenderedYToXBounds = new Map();
+            if (data.polygons && data.polygons.length > 0) {
+                data.polygons[0].forEach(point => {
+                    const x = point[0];
+                    const y = point[1];
+                    const yi = Math.round(y);
+                    if (!lastRenderedYToXBounds.has(yi)) {
+                        lastRenderedYToXBounds.set(yi, { minX: x, maxX: x });
+                    } else {
+                        const b = lastRenderedYToXBounds.get(yi);
+                        b.minX = Math.min(b.minX, x);
+                        b.maxX = Math.max(b.maxX, x);
+                    }
+                });
+            }
+            // The `animate` loop will pick up these updated globals and redraw.
+            // No need to call renderCanvasContent directly here.
+        }
+
+        // Function to draw a 3D sphere node (without orbiting stars)
+function draw3DSphereNode(ctx, centerX, centerY, radius, baseColor) {
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 5;
+
+            const lightX = centerX - radius * 0.5, lightY = centerY - radius * 0.5;
+            const mainGrad = ctx.createRadialGradient(lightX, lightY, radius * 0.1, centerX, centerY, radius * 1.2);
+            mainGrad.addColorStop(0, '#ffffff');
+            mainGrad.addColorStop(0.4, baseColor);
+            mainGrad.addColorStop(1, '#111111');
+            
+            ctx.beginPath(); ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI); ctx.fillStyle = mainGrad; ctx.fill();
+            
+            ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+            
+            const specGrad = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, radius * 0.6);
+            specGrad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+            specGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = specGrad; ctx.fill();
+            ctx.restore();
+        }
+        // New function to encapsulate the drawing logic that was previously directly in desenharPoligonoETrilha
+        function drawTrailNodesAndEdgesContent(polygonPoints, yToXBounds, showCostLabels) { // Removed nodesData and edgesData
+            clickableAreas = []; // Reset clickable areas
+            
+            // Populate global nodes and edges based on trailData and calculated positions
+            nodes = new Map(); // Reset global nodes map
+            edges = []; // Reset global edges array
+            let totalCost = 0;
+
+            const stages = trailData.etapas;
+            if (stages.length === 0) {
+                showMessage('Não há etapas para desenhar a trilha.', 'info');
+                return;
+            }
+
+            // Populate nodes with initial stage data and initialize sphereRotationAngle
+            stages.forEach(stage => {
+                const newNode = { id: stage.id, x: 0, y: 0, stageData: stage, sphereRotationAngle: Math.random() * Math.PI * 2 }; // Removed orbitingStars
+                nodes.set(stage.id, newNode); // Initialize node position
+                nodeColors.set(stage.id, NODE_COLORS[(stage.id - 1) % NODE_COLORS.length]); // Assign color
+            });
+
+            // Populate edges and calculate total cost
+            stages.forEach(stage => {
+                if (stage.custo) {
+                    const edgeStrings = stage.custo.split(';');
+                    edgeStrings.forEach(edgeStr => {
+                        const parts = edgeStr.split('=');
+                        if (parts.length === 2) {
+                            const [nodePair, costStr] = parts;
+                            const [sourceIdStr, destIdStr] = nodePair.split('-');
+                            const sourceId = Number(sourceIdStr);
+                            const destId = Number(destIdStr); 
+                            const cost = Number(costStr);
+                            if (!isNaN(sourceId) && !isNaN(destId) && !isNaN(cost)) {
+                                edges.push({ sourceId, destId, cost });
+                                totalCost += cost;
+                            }
+                        }
+                    });
+                }
+            });
+
+
+            // Determine overall min/max X/Y of the polygon
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            polygonPoints.forEach(point => {
+                minX = Math.min(minX, point[0]); // Acessar como array [x,y]
+                maxX = Math.max(maxX, point[0]); // Acessar como array [x,y]
+                minY = Math.min(minY, point[1]); // Acessar como array [x,y]
+                maxY = Math.max(maxY, point[1]); // Acessar como array [x,y]
+            });
+
+            // Find the lowest-leftmost point on the contour
+            let lowestLeftPointOnContour = { x: minX, y: maxY };
+            for (const point of polygonPoints) {
+                if (point[1] > lowestLeftPointOnContour.y || (point[1] === lowestLeftPointOnContour.y && point[0] < lowestLeftPointOnContour.x)) {
+                    lowestLeftPointOnContour = { x: point[0], y: point[1] };
+                }
+            }
+
+            // Find the highest-rightmost point on the contour
+            let highestRightPointOnContour = { x: maxX, y: minY };
+            for (const point of polygonPoints) {
+                if (point[1] < highestRightPointOnContour.y || (point[1] === highestRightPointOnContour.y && point[0] > highestRightPointOnContour.x)) {
+                    highestRightPointOnContour = { x: point[0], y: point[1] };
+                }
+            }
+
+            let finalNodeTargetX;
+            let finalNodeTargetY;
+
+            const allNodeIds = Array.from(nodes.keys()).sort((a, b) => a - b);
+            const minId = allNodeIds[0];
+            const maxId = allNodeIds[allNodeIds.length - 1];
+
+            // Position the first node (minId) at the lowest-leftmost point
+            let initialMinY = lowestLeftPointOnContour.y;
+            nodes.get(minId).y = Math.max(minY, Math.min(maxY, initialMinY));
+            let boundsMinY = yToXBounds.get(Math.round(nodes.get(minId).y));
+            if (boundsMinY) {
+                nodes.get(minId).x = boundsMinY.minX;
+            } else {
+                nodes.get(minId).x = minX;
+            }
+
+            // Position the last node (maxId) at the highest-rightmost point
+            let initialMaxY = highestRightPointOnContour.y;
+            nodes.get(maxId).y = Math.max(minY, Math.min(maxY, initialMaxY));
+            let boundsMaxY = yToXBounds.get(Math.round(nodes.get(maxId).y));
+            if (boundsMaxY) {
+                nodes.get(maxId).x = boundsMaxY.maxX;
+            } else {
+                nodes.get(maxId).x = maxX;
+            }
+
+            finalNodeTargetX = nodes.get(maxId).x;
+            finalNodeTargetY = nodes.get(maxId).y;
+
+            const MAX_HEIGHT = nodes.get(minId).y - nodes.get(maxId).y;
+            const num_vertical_steps = allNodeIds.length - 1;
+            const MEASURE_UNIT = MAX_HEIGHT / (num_vertical_steps > 0 ? num_vertical_steps : 1);
+
+            // Calculate total Euclidean distance between minId and maxId as a baseline
+            const totalEuclideanDistance = Math.sqrt(
+                Math.pow(nodes.get(maxId).x - nodes.get(minId).x, 2) +
+                Math.pow(nodes.get(maxId).y - nodes.get(minId).y, 2)
+            );
+
+            // Make PIXEL_PER_COST_UNIT_EUCLIDEAN_NEW dynamic based on total path length and total cost
+            const PIXEL_PER_COST_UNIT_EUCLIDEAN_NEW = totalCost > 0 ? totalEuclideanDistance / totalCost : 50;
+
+            // Make ZIGZAG_NODE_OFFSET_MAGNITUDE dynamic based on PIXEL_PER_COST_UNIT_EUCLIDEAN_NEW
+            const ZIGZAG_NODE_OFFSET_MAGNITUDE = PIXEL_PER_COST_UNIT_EUCLIDEAN_NEW * 1.5;
+
+            const visitedNodes = new Set([minId]);
+            const queue = [minId];
+
+            const nodeZigzagSides = new Map();
+            nodeZigzagSides.set(minId, 'right');
+            
+            // Breadth-First Search (BFS) to position nodes
+            while (queue.length > 0) {
+                const currentSourceId = queue.shift();
+                const currentSourcePos = nodes.get(currentSourceId);
+
+                const outgoingEdges = edges.filter(e => e.sourceId === currentSourceId);
+
+                for (const edge of outgoingEdges) {
+                    const destId = edge.destId;
+                    // Special handling for the last node
+                    if (destId === maxId) {
+                        if (!visitedNodes.has(destId)) {
+                            visitedNodes.add(destId);
+                            queue.push(destId);
+                        }
+                        continue;
+                    }
+
+                    if (!visitedNodes.has(destId)) {
+                        let segmentLength = edge.cost * PIXEL_PER_COST_UNIT_EUCLIDEAN_NEW;
+
+                        const angleToFinalTarget = Math.atan2(finalNodeTargetY - currentSourcePos.y, finalNodeTargetX - currentSourcePos.x);
+                        
+                        let idealTargetX = currentSourcePos.x + segmentLength * Math.cos(angleToFinalTarget);
+                        let idealTargetY = currentSourcePos.y + segmentLength * Math.sin(angleToFinalTarget);
+
+                        const currentSegmentZigzagSide = nodeZigzagSides.get(currentSourceId);
+                        let offsetX = 0;
+                        let offsetY = 0;
+
+                        const dx_segment_ideal = idealTargetX - currentSourcePos.x;
+                        const dy_segment_ideal = idealTargetY - currentSourcePos.y;
+                        const segmentHypotenuse_ideal = Math.sqrt(dx_segment_ideal * dx_segment_ideal + dy_segment_ideal * dy_segment_ideal);
+
+                        if (segmentHypotenuse_ideal > 0) {
+                            if (currentSegmentZigzagSide === 'right') {
+                                offsetX = -dy_segment_ideal / segmentHypotenuse_ideal * ZIGZAG_NODE_OFFSET_MAGNITUDE;
+                                offsetY = dx_segment_ideal / segmentHypotenuse_ideal * ZIGZAG_NODE_OFFSET_MAGNITUDE;
+                            } else {
+                                offsetX = dy_segment_ideal / segmentHypotenuse_ideal * ZIGZAG_NODE_OFFSET_MAGNITUDE;
+                                offsetY = -dx_segment_ideal / segmentHypotenuse_ideal * ZIGZAG_NODE_OFFSET_MAGNITUDE;
+                            }
+                        }
+                        
+                        idealTargetX += offsetX;
+                        idealTargetY += offsetY;
+
+                        let bestX = idealTargetX;
+                        let bestY = idealTargetY;
+                        let minDistanceToIdeal = Infinity;
+
+                        // Search for the best position around the ideal target, prioritizing staying within bounds
+                        const searchRange = Math.max(NODE_RADIUS * 2, ZIGZAG_NODE_OFFSET_MAGNITUDE * 0.5);
+                        const startSearchY = Math.max(minY, Math.round(idealTargetY - searchRange));
+                        const endSearchY = Math.min(maxY, Math.round(idealTargetY + searchRange));
+                        const startSearchX = Math.max(minX, Math.round(idealTargetX - searchRange));
+                        const endSearchX = Math.min(maxX, Math.round(idealTargetX + searchRange));
+
+                        let foundValidPoint = false;
+                        for (let y = startSearchY; y <= endSearchY; y++) {
+                            const bounds = yToXBounds.get(y);
+                            if (bounds) {
+                                for (let x = Math.max(bounds.minX, startSearchX); x <= Math.min(bounds.maxX, endSearchX); x++) {
+                                    const currentDistance = Math.sqrt(Math.pow(x - currentSourcePos.x, 2) + Math.pow(y - currentSourcePos.y, 2));
+                                    const distanceDifference = Math.abs(currentDistance - segmentLength);
+
+                                    if (distanceDifference < minDistanceToIdeal) {
+                                        minDistanceToIdeal = distanceDifference;
+                                        bestX = x;
+                                        bestY = y;
+                                        foundValidPoint = true;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Fallback if no point was found within the detailed search
+                        if (!foundValidPoint) {
+                            const closestYInBounds = Array.from(yToXBounds.keys()).reduce((prev, curr) =>
+                                Math.abs(curr - idealTargetY) < Math.abs(prev - idealTargetY) ? curr : prev
+                            );
+                            const boundsAtClosestY = yToXBounds.get(closestYInBounds);
+                            if (boundsAtClosestY) {
+                                bestX = Math.max(boundsAtClosestY.minX, Math.min(boundsAtClosestY.maxX, idealTargetX));
+                                bestY = closestYInBounds;
+                            } else {
+                                bestX = idealTargetX;
+                                bestY = idealTargetY;
+                                console.warn(`Fallback: No valid bounds found for any Y. Node might be outside polygon.`);
+                            }
+                        }
+
+                        // Final clamp to ensure node is within overall polygon bounding box
+                        bestX = Math.max(minX, Math.min(maxX, bestX));
+                        bestY = Math.max(minY, Math.min(maxY, bestY));
+
+                        nodes.get(destId).x = bestX;
+                        nodes.get(destId).y = bestY;
+                        visitedNodes.add(destId);
+                        queue.push(destId);
+
+                        nodeZigzagSides.set(destId, (currentSegmentZigzagSide === 'right') ? 'left' : 'right');
+                    }
+                }
+            }
+
+            // Draw Edges (using quadratic curves)
+            ctx.lineWidth = 3;
+			let curveDirectionToggle = 1; // 1 = right, -1 = left
+
+            for (const edge of edges) {
+				const startNode = nodes.get(edge.sourceId);
+				const endNode = nodes.get(edge.destId);
+
+				if (startNode && endNode && startNode.x !== undefined && startNode.y !== undefined && endNode.x !== undefined && endNode.y !== undefined) {
+					const midX = (startNode.x + endNode.x) / 2;
+					const midY = (startNode.y + endNode.y) / 2;
+
+					const dx_line = endNode.x - startNode.x;
+					const dy_line = endNode.y - startNode.y;
+					const lineLength = Math.sqrt(dx_line * dx_line + dy_line * dy_line);
+
+					let offsetX = 0;
+					let offsetY = 0;
+					const curveOffsetMagnitude = 80; // Magnitude of the curve offset
+
+					if (lineLength > 0) {
+						offsetX = -dy_line / lineLength * curveOffsetMagnitude * curveDirectionToggle;
+						offsetY = dx_line / lineLength * curveOffsetMagnitude * curveDirectionToggle;
+					}
+
+					const controlPointX = midX + offsetX;
+					const controlPointY = midY + offsetY;
+
+					ctx.beginPath();
+					ctx.moveTo(startNode.x, startNode.y);
+					ctx.strokeStyle = nodeColors.get(startNode.stageData.id);
+					ctx.quadraticCurveTo(controlPointX, controlPointY, endNode.x, endNode.y);
+					ctx.stroke();
+
+					curveDirectionToggle *= -1; // Toggle curve direction for next edge
+
+                    // Draw cost label
+                    if (showCostLabels && edge.cost !== undefined) {
+                        ctx.save();
+                        ctx.fillStyle = "#000"; // Black color for cost text
+                        ctx.font = "bold 10px Inter, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        // Position the text slightly above the midpoint of the curve
+                        ctx.fillText(edge.cost, controlPointX, controlPointY - 8);
+                        ctx.restore();
+                    }
+				}
+			}
+			
+			// Draw Nodes (Circles and Labels) on top of edges
+			nodes.forEach((nodeData, id) => {
+				if (nodeData.x !== undefined && nodeData.y !== undefined) {
+					clickableAreas.push({
+						stage: nodeData.stageData,
+						xMin: nodeData.x - NODE_RADIUS,
+						xMax: nodeData.x + NODE_RADIUS,
+						yMin: nodeData.y - NODE_RADIUS,
+						yMax: nodeData.y + NODE_RADIUS,
+                        id: nodeData.id // Ensure ID is stored for comparison
+					});
+					
+					// Substitui o círculo simples por uma esfera simulada
+					//draw3DSphereNode(ctx, nodeData.x, nodeData.y, NODE_RADIUS, nodeColors.get(id), nodeData.sphereRotationAngle);
+                    draw3DSphereNode(ctx, nodeData.x, nodeData.y, NODE_RADIUS, nodeColors.get(id));
+                            
+
+					// Draw node text
+					ctx.fillStyle = '#333';
+					ctx.font = '14px "Inter", sans-serif';
+					ctx.textAlign = 'center';
+					ctx.fillText(`ID: ${nodeData.stageData.id} - ${nodeData.stageData.etapa}`, nodeData.x, nodeData.y - NODE_RADIUS - 5);
+				}
+			});
+            
+		}
+
+
+        
+
+        // Set a placeholder image initially
+        img.src = "https://placehold.co/600x400/a0aec0/ffffff?text=Carregue+sua+Montanha";
+
+        // Initialize on window load
+        window.onload = function () {
+            // Set default trailData in the textarea on window load
+            if (!trailDataInput.value) {
+                trailDataInput.value = JSON.stringify(trailData, null, 2);
+            }
+
+            // Main canvas click event listener (for single node details)
+            mountainCanvas.addEventListener('click', (e) => {
+                const rect = mountainCanvas.getBoundingClientRect();
+                const scaleX = mountainCanvas.width / rect.width;
+                const scaleY = mountainCanvas.height / rect.height;
+                const clickX = (e.clientX - rect.left) * scaleX;
+                const clickY = (e.clientY - rect.top) * scaleY;
+
+                // If not the close button, check for node clicks
+                for (const area of clickableAreas) {
+                    // Only process areas that are nodes (i.e., have a 'stage' property)
+                    if (area.stage) { // This ensures we are dealing with a node
+                        // Calculate distance from click to node center
+                        const nodeCenterX = area.xMin + NODE_RADIUS;
+                        const nodeCenterY = area.yMin + NODE_RADIUS; 
+                        const distanceToNodeCenter = Math.sqrt(Math.pow(clickX - nodeCenterX, 2) + Math.pow(clickY - nodeCenterY, 2));
+
+                        if (distanceToNodeCenter <= NODE_RADIUS) { // Click is within this node's radius
+                            // Now, check for collisions with other nodes based on their centers
+                            const collidingGroup = clickableAreas.filter(a =>
+                                a.stage && // Ensure 'a' is also a node
+                                a !== area && // Exclude the clicked node itself
+                                (() => {
+                                    const otherNodeCenterX = a.xMin + NODE_RADIUS;
+                                    const otherNodeCenterY = a.yMin + NODE_RADIUS; 
+                                    const distanceBetweenCenters = Math.sqrt(
+                                        Math.pow(otherNodeCenterX - nodeCenterX, 2) +
+                                        Math.pow(otherNodeCenterY - nodeCenterY, 2)
+                                    );
+                                    // Two circles collide if the distance between their centers is less than the sum of their radii
+                                    return distanceBetweenCenters < (NODE_RADIUS + NODE_RADIUS);
+                                })()
+                            );
+
+                            if (collidingGroup.length > 0) { // If there are other colliding nodes
+                                // Add the clicked node to the group for the zoom popup
+                                const fullCollidingCluster = [nodes.get(area.id), ...collidingGroup.map(a => nodes.get(a.id))]; // Use area.id
+                                openZoomPopup(fullCollidingCluster, e.clientX, e.clientY);
+                            } else {
+                                // No other colliding nodes, open modal for this single stage
+                                // Change here: Pass node's center coordinates for consistency
+                                openModalForStage(area.stage, nodeCenterX, nodeCenterY); 
+                            }
+                            return; // Stop processing after handling a node click
+                        }
+                    }
+                }
+            });
+
+            // Main canvas mousemove event listener (for zoom popup on collisions)
+            mountainCanvas.addEventListener('mousemove', (e) => {
+                const rect = mountainCanvas.getBoundingClientRect();
+                const scaleX = mountainCanvas.width / rect.width;
+                const scaleY = mountainCanvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+
+                let hoveredArea = null;
+                for (const area of clickableAreas) {
+                    // Check if the area is a node (has a stage property) and if mouse is over it
+                    if (area.stage) {
+                        const nodeCenterX = area.xMin + NODE_RADIUS;
+                        const nodeCenterY = area.yMin + NODE_RADIUS;
+                        const distance = Math.sqrt(Math.pow(mouseX - nodeCenterX, 2) + Math.pow(mouseY - nodeCenterY, 2));
+                        if (distance <= NODE_RADIUS) {
+                            hoveredArea = area;
+                            break;
+                        }
+                    }
+                }
+
+                // Get the zoom modal element if it exists
+                const zoomModalElement = document.getElementById('zoomModal');
+                // Check if the mouse is currently over the zoom modal's content area
+                const isMouseOverZoomModalContent = zoomModalElement && zoomModalElement.querySelector('#zoomContent')?.contains(e.target);
+
+                if (hoveredArea) {
+                    const nodeCenterX = hoveredArea.xMin + NODE_RADIUS;
+                    const nodeCenterY = hoveredArea.yMin + NODE_RADIUS;
+
+                    const collidingGroup = clickableAreas.filter(a => 
+                        a.stage && // Ensure 'a' is a node
+                        a !== hoveredArea && // Exclude the hovered node itself
+                        (() => {
+                            const otherNodeCenterX = a.xMin + NODE_RADIUS;
+                            const otherNodeCenterY = a.yMin + NODE_RADIUS;
+                            const distanceBetweenCenters = Math.sqrt(
+                                Math.pow(otherNodeCenterX - nodeCenterX, 2) +
+                                Math.pow(otherNodeCenterY - nodeCenterY, 2)
+                            );
+                            // Two circles collide if the distance between their centers is less than the sum of their radii
+                            return distanceBetweenCenters < (NODE_RADIUS + NODE_RADIUS);
+                        })()
+                    );
+
+                    if (collidingGroup.length > 0) {
+                        // Set cursor to zoom-in when hovering over a colliding group
+                        mountainCanvas.style.cursor = 'zoom-in';
+                    } else {
+                        // Set cursor to pointer for single (non-colliding) nodes
+                        mountainCanvas.style.cursor = 'pointer';
+                        // If mouse is over a single node or no collision, and zoom popup is open, close it
+                        if (zoomPopupOpen && currentHoveredCluster && !isMouseOverZoomModalContent) {
+                            closeZoomPopup();
+                        }
+                    }
+                } else {
+                    // Reset cursor to default when not hovering over any clickable area
+                    mountainCanvas.style.cursor = 'default';
+
+                    // If mouse is not over any node, and zoom popup is open, close it
+                    if (zoomPopupOpen && currentHoveredCluster && !isMouseOverZoomModalContent) {
+                        closeZoomPopup();
+                    }
+                }
+            });
+
+            // Add event listener for the load trail data button
+            loadTrailDataBtn.addEventListener('click', loadTrailDataFromInput);
+
+            // Global keydown event listener for 'Escape' key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    // Close stage modal if open
+                    closeStagePopup();
+
+                    // Close zoom modal if open
+                    closeZoomPopup();
+                }
+            });
+            
+            // Start the animation loop when the window loads
+            animate();
+        };
+    </script>
+</body>
+</html>
