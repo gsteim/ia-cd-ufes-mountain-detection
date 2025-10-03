@@ -1,6 +1,6 @@
 # Detecção de Montanhas (ia-cd-ufes-mountain-detection)
 
-Este repositório contém o código-fonte para o projeto de detecção de montanhas utilizando técnicas de Inteligência Artificial, desenvolvido no contexto da UFES (Universidade Federal do Espírito Santo).
+Este repositório contém o código-fonte para o projeto de detecção de montanhas utilizando técnicas de Inteligência Artificial, desenvolvido na especialização em Inteligência Artifical e Ciência de Dados da UFES (Universidade Federal do Espírito Santo).
 
 ## Pré-requisitos
 
@@ -30,7 +30,7 @@ O arquivo do modelo pré-treinado Segment Anything Model (SAM) **NÃO** está in
 
 **Para que o projeto funcione corretamente, você deve baixar o arquivo `.pth` diretamente do seu [repositório de origem](https://github.com/facebookresearch/segment-anything), conforme indicado pelo autor do projeto.**
 
-Após o download, coloque o arquivo `.pth` no diretório raiz, onde está o arquivo app.py.
+Após o download, coloque o arquivo `.pth` no diretório raiz, onde está o arquivo `app.py`.
 
 ## Uso
 
