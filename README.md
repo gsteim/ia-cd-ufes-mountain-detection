@@ -38,3 +38,8 @@ Para executar o servidor localmente:
 
 ```bash
 python app.py
+```
+
+
+Abra o navegador na página informada no console (normalmente será no link `http://127.0.0.1:5000/`) e navegue na aplicação.
+
